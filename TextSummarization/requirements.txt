@@ -1,0 +1,6 @@
+streamlit
+configparser
+bs4
+requests
+spacy_streamlit
+spacy
