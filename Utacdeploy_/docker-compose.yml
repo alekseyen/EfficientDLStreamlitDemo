@@ -1,0 +1,123 @@
+version: '3.1'
+
+services:
+  nginx:
+    image: nginx:1.15
+    container_name: nginx
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+      - 81:81
+      - 82:82
+    networks:
+      - my-network
+    depends_on:
+      - flask
+      - flask_retrain
+      - streamlit
+
+  flask:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: flask
+    environment:
+      - RETRAIN_IP=${RETRAIN_IP}
+    command: gunicorn --bind 0.0.0.0:8000 --workers 1 "app.main:app" --timeout 86400
+    #ports:
+    #  - 8000:8000
+    volumes:
+      - ./:/var/www
+    networks:
+      my-network:
+        aliases:
+          - flask-app
+
+  flask_retrain:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: flask_retrain
+    environment:
+      - RETRAIN_IP=${RETRAIN_IP}
+    command: gunicorn --bind 0.0.0.0:8001 --workers 1 "retrain_app.retrain:app" --timeout 86400
+    #ports:
+    #  - 8001:8001
+    volumes:
+      - ./:/var/www
+    networks:
+      my-network:
+        aliases:
+          - flask-retrain_app
+
+  streamlit:
+    build:
+      context: ./
+      dockerfile: ui_app/Dockerfile
+    container_name: streamlit
+    environment:
+      - RETRAIN_IP=${RETRAIN_IP}
+    command: streamlit run ui_app/app.py
+    ports:
+      - 8501:8501
+    volumes:
+      - ./:/var/www
+    networks:
+      my-network:
+        aliases:
+          - streamlit-app
+          
+  prometheus:
+    image: bitnami/prometheus
+    ports:
+      - '9090:9090'
+    container_name: prometheus
+    restart: always
+    #network_mode: host
+    volumes:
+      - './prometheus/prometheus.yml:/opt/bitnami/prometheus/conf/prometheus.yml'
+      - 'prometheus_data:/opt/bitnami/prometheus/data'
+    networks:
+      - my-network
+    depends_on:
+      - nginx
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - '3000:3000'
+    container_name: grafana
+    restart: always
+    #network_mode: host
+    depends_on:
+      - prometheus
+    volumes:
+      - './grafana/grafana.ini:/etc/grafana/grafana.ini'
+      - './grafana/provisioning/datasources:/etc/grafana/provisioning/datasources'
+      - './grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards'
+    networks:
+      - my-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: Secret
+    volumes:
+      - mongo_data:/data/db
+      - mongo_configdb:/data/configdb
+    networks:
+      - my-network
+    depends_on:
+      - nginx
+      
+networks:
+  my-network:
+volumes:
+  prometheus_data:
+  mongo_data:
+  mongo_configdb:
