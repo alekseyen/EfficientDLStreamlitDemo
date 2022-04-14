@@ -6,7 +6,7 @@ All projects start with `streamlit run app.py`
 
 2. Text-Summarization
 
-|   s|     q |
+|   |     |
 |----| ---- |
 | ![](imgages/text_summarixation_one.png) | ![](imgages/text_summarixation_two.png) |
 
