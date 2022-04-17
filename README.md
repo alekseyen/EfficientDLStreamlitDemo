@@ -6,7 +6,9 @@ Requirements that suits for all project at once, u can find here `all_projects_r
 
 1. Webrtc-example ![](images/web_rtc.png)
 
-2. Text-Summarization
+2. StreamlitFastapiModelServing
+
+3. Text-Summarization
 
 |   |     |
 |----| ---- |
